@@ -1,0 +1,14 @@
+# Google credentials
+credentials.json
+
+# Python venv
+venv/
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
