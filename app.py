@@ -58,7 +58,39 @@ try:
     if "login" in resp_login.url or "error" in resp_login.text.lower():
         raise Exception(
             "Inicio de sesión FALLIDO: Verifique el usuario y la contraseña.")
-
+        
+    # 2. Navegar a la página protegida (reporte) una vez iniciada la sesión
+    resp_data = session.get(DATA_URL)
+    resp_data.raise_for_status()
+    
+    # 3. Extraer los datos de la tabla en la página protegida
+    soup_data = BeautifulSoup(resp_data.text, "html.parser")
+    table = soup_data.find("table")
+    if table is None:
+        raise Exception("No se encontró la tabla de datos en la página protegida.")
+    
+    # Identificar las columnas de interés por clase en el encabezado
+    header_cells = table.find_all("th")
+    if not header_cells:
+        raise Exception("La tabla no tiene encabezados <th>, estructura inesperada.")
+    # Crear un diccionario para mapear la clase de encabezado a su índice de columna
+    col_index = {}
+    for idx, th in enumerate(header_cells):
+        if not th.get("class"):
+            continue
+        # Una celda th puede tener múltiples clases, verificamos cada una
+        for cls in th.get("class"):
+            if cls in TARGET_HEADER_CLASSES:
+                col_index[cls] = idx
+    # Verificar que se encontraron todas las columnas necesarias
+    for cls in TARGET_HEADER_CLASSES:
+        if cls not in col_index:
+            raise Exception(f"No se encontró la columna esperada: {cls}")
+    
+    
+    
+    
+    
 # ---------------------------------------
 
 # Google Sheets authorization
