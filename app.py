@@ -96,7 +96,7 @@ try:
         # Obtener el texto del encabezado en ese índice
         header_text = header_cells[idx].get_text(strip=True)
         header_values.append(header_text)
-        
+
     # Recorrer las filas del cuerpo de la tabla y extraer columnas deseadas
     data_rows = []
     tbody = table.find("tbody")
@@ -106,7 +106,8 @@ try:
     else:
         table_rows = tbody.find_all("tr")
     for row in table_rows:
-        cells = row.find_all(["td", "th"])  # algunas tablas podrían usar <th> para celdas de cuerpo
+        # algunas tablas podrían usar <th> para celdas de cuerpo
+        cells = row.find_all(["td", "th"])
         if not cells:
             continue  # saltar si la fila está vacía o no tiene celdas
         # Extraer valores en el orden de TARGET_HEADER_CLASSES
@@ -119,18 +120,19 @@ try:
                 cell_text = ""
             row_data.append(cell_text)
         data_rows.append(row_data)
-    
+
     # Verificar que se obtuvieron filas de datos
     if not data_rows:
-        raise Exception("La tabla está vacía o no se pudieron extraer filas de datos.")
-    
+        raise Exception(
+            "La tabla está vacía o no se pudieron extraer filas de datos.")
+
     # 4. Conectar a Google Sheets usando la cuenta de servicio
     scope = [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive'
-]
+        'https://www.googleapis.com/auth/spreadsheets',
+        'https://www.googleapis.com/auth/drive'
+    ]
     creds = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=scope)
+        SERVICE_ACCOUNT_FILE, scopes=scope)
     client = gspread.authorize(creds)
     # Abrir la hoja de cálculo (por nombre del documento y luego nombre de hoja)
     try:
@@ -140,49 +142,18 @@ try:
     try:
         worksheet = spreadsheet.worksheet(SHEET_NAME)
     except Exception as e:
-        raise Exception(f"No se encontró la pestaña '{SHEET_NAME}' en la hoja de cálculo: {e}")
-    
+        raise Exception(
+            f"No se encontró la pestaña '{SHEET_NAME}' en la hoja de cálculo: {e}")
 
-# ---------------------------------------
+    # 5. Reemplazar completamente los datos existentes en la hoja con los nuevos datos
+    worksheet.clear()  # Limpia todo el contenido actual de la hoja
+    # Preparar los datos a subir: incluir encabezados en la primera fila, seguido de las filas de datos
+    all_data = [header_values] + data_rows
+    # Actualizar la hoja de cálculo empezando desde la celda A1 con el nuevo contenido
+    worksheet.update("A1", all_data)
 
-# Google Sheets authorization
+    print("Datos actualizados correctamente en la hoja de Google Sheets.")
 
-
-client = gspread.authorize(creds)
-sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
-
-# Step 1: Request the quotes page
-URL = 'http://quotes.toscrape.com/'
-
-try:
-    response = requests.get(URL, timeout=10)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'html.parser')
-except requests.exceptions.Timeout:
-    print("⏰ Request timed out.")
-    soup = None
-except requests.exceptions.RequestException as e:
-    print(f"🚨 Request failed: {e}")
-    soup = None
-
-if soup:
-    # continue parsing
-    quotes = soup.select('.quote')
-
-# Step 2: Parse quotes
-quotes = soup.select('.quote')  # select all quote blocks
-
-data = [['Quote', 'Author', 'Tags']]  # header row
-
-for quote in quotes:
-    text = quote.select_one('.text').get_text(strip=True)
-    author = quote.select_one('.author').get_text(strip=True)
-    tags = [tag.get_text(strip=True) for tag in quote.select('.tags .tag')]
-    tags_str = ', '.join(tags)
-    data.append([text, author, tags_str])
-
-# Step 3: Write to Google Sheets
-sheet.clear()  # clear existing content (optional)
-sheet.update('A1', data)  # write all data starting from A1
-
-print("✅ Quotes scraped and saved to Google Sheets.")
+except Exception as err:
+    # 6. Manejo de errores: imprimir el mensaje de error y finalizar
+    print(f"ERROR: {err}")
