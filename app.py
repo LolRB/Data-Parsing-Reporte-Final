@@ -5,10 +5,20 @@ from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
 
+# Configuración: URLs y credenciales
+LOGIN_URL = "https://prodep.capacitacioncontinua.mx/login/index.php"
+DATA_URL = "https://prodep.capacitacioncontinua.mx/local/kopere_dashboard/view.php?classname=reports&method=load_report&type=course&report=3&courseid=12"
+USERNAME = "manager"       # <-- Reemplazar con el nombre de usuario correcto
+PASSWORD = "m4N4G3R*"    # <-- Reemplazar con la contraseña correcta
+
 # Google Sheets config
-SERVICE_ACCOUNT_FILE = 'credentials.json'
-SPREADSHEET_NAME = 'Prueba Data Parsing'
-SHEET_NAME = 'Hoja 1'
+
+SERVICE_ACCOUNT_FILE = 'credentials.json' #  Archivo JSON de la cuenta de servicio
+SPREADSHEET_NAME = 'Prueba Data Parsing' # Puede ser el nombre del documento de Google Sheets
+SHEET_NAME = 'Hoja 1'  # Nombre de la pestaña/hoja dentro del documento
+
+
+# ---------------------------------------
 
 # Google Sheets authorization
 scope = [
