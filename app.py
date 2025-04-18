@@ -31,6 +31,34 @@ TARGET_HEADER_CLASSES = [
     "th_course_completed"
 ]
 
+try:
+    # 1. Iniciar sesión en el sitio web
+    session = requests.Session()
+    resp_login_page = session.get(LOGIN_URL)
+    resp_login_page.raise_for_status()  # Verifica que se obtuvo respuesta 200 OK
+
+    # Parsear el HTML de la página de login para obtener el token oculto
+    soup_login = BeautifulSoup(resp_login_page.text, "html.parser")
+    token_input = soup_login.find("input", {"name": "logintoken"})
+    login_token = token_input["value"] if token_input else ""
+
+    # Preparar los datos de inicio de sesión (usuario, contraseña, token y anchor vacío)
+    login_data = {
+        "username": USERNAME,
+        "password": PASSWORD,
+        "anchor": "",
+    }
+    if login_token:
+        login_data["logintoken"] = login_token
+
+    # Enviar la solicitud POST de login con las credenciales
+    resp_login = session.post(LOGIN_URL, data=login_data)
+    # Comprobar si el login fue exitoso buscando alguna evidencia de sesión iniciada.
+    # Por ejemplo, si la respuesta sigue mostrando el formulario de login, significa que falló.
+    if "login" in resp_login.url or "error" in resp_login.text.lower():
+        raise Exception(
+            "Inicio de sesión FALLIDO: Verifique el usuario y la contraseña.")
+
 # ---------------------------------------
 
 # Google Sheets authorization
