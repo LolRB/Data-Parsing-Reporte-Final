@@ -1,6 +1,8 @@
-# 📝 Quotes Scraper to Google Sheets
+# 📝 Data Parsing to Google Sheets
 
-This project is a Python-based web scraper that extracts quotes from [quotes.toscrape.com](http://quotes.toscrape.com) and writes them into a Google Sheets spreadsheet using the Google Sheets API.
+Script de Python para iniciar sesión en PRODEP, extraer datos y actualizar Google Sheets
+
+-----
 
 It uses:
 

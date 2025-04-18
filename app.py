@@ -13,10 +13,23 @@ PASSWORD = "m4N4G3R*"    # <-- Reemplazar con la contraseña correcta
 
 # Google Sheets config
 
-SERVICE_ACCOUNT_FILE = 'credentials.json' #  Archivo JSON de la cuenta de servicio
-SPREADSHEET_NAME = 'Prueba Data Parsing' # Puede ser el nombre del documento de Google Sheets
+# Archivo JSON de la cuenta de servicio
+SERVICE_ACCOUNT_FILE = 'credentials.json'
+# Puede ser el nombre del documento de Google Sheets
+SPREADSHEET_NAME = 'Prueba Data Parsing'
 SHEET_NAME = 'Hoja 1'  # Nombre de la pestaña/hoja dentro del documento
 
+
+# Clases de encabezados que queremos extraer (y el orden deseado de columnas)
+TARGET_HEADER_CLASSES = [
+    "th_userid",
+    "th_userfullname",
+    "th_email",
+    "th_timecreated",
+    "th_activities_completed",
+    "th_activities_assigned",
+    "th_course_completed"
+]
 
 # ---------------------------------------
 
