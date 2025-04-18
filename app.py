@@ -5,27 +5,23 @@ from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
 
-from dotenv import load_dotenv
-import os
-
-# Cargar variables del archivo .env
-load_dotenv()  # Carga variables del archivo .env al entorno
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 # Configuración: URLs y credenciales
 LOGIN_URL = "https://prodep.capacitacioncontinua.mx/login/index.php"
 DATA_URL = "https://prodep.capacitacioncontinua.mx/local/kopere_dashboard/view.php?classname=reports&method=load_report&type=course&report=3&courseid=12"
 
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
+USERNAME = "manager"
+PASSWORD = "m4N4G3R*"
 
 # Google Sheets config
 
 # Archivo JSON de la cuenta de servicio
 SERVICE_ACCOUNT_FILE = 'credentials.json'
-
-SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME")
-WORKSHEET_NAME = os.getenv("WORKSHEET_NAME")
+SPREADSHEET_NAME = 'Prueba Data Parsing'
+WORKSHEET_NAME = 'Hoja 1'
 
 
 # Clases de encabezados que queremos extraer (y el orden deseado de columnas)
@@ -42,7 +38,7 @@ TARGET_HEADER_CLASSES = [
 try:
     # 1. Iniciar sesión en el sitio web
     session = requests.Session()
-    resp_login_page = session.get(LOGIN_URL)
+    resp_login_page = session.get(LOGIN_URL, verify=False)
     resp_login_page.raise_for_status()  # Verifica que se obtuvo respuesta 200 OK
 
     # Parsear el HTML de la página de login para obtener el token oculto
@@ -60,7 +56,7 @@ try:
         login_data["logintoken"] = login_token
 
     # Enviar la solicitud POST de login con las credenciales
-    resp_login = session.post(LOGIN_URL, data=login_data)
+    resp_login = session.post(LOGIN_URL, data=login_data, verify=False)
     # Comprobar si el login fue exitoso buscando alguna evidencia de sesión iniciada.
     # Por ejemplo, si la respuesta sigue mostrando el formulario de login, significa que falló.
     if "login" in resp_login.url or "error" in resp_login.text.lower():
@@ -68,7 +64,7 @@ try:
             "Inicio de sesión FALLIDO: Verifique el usuario y la contraseña.")
 
     # 2. Navegar a la página protegida (reporte) una vez iniciada la sesión
-    resp_data = session.get(DATA_URL)
+    resp_data = session.get(DATA_URL, verify=False)
     resp_data.raise_for_status()
 
     # 3. Extraer los datos de la tabla en la página protegida
