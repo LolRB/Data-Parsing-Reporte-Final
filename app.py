@@ -5,19 +5,27 @@ from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
 
+from dotenv import load_dotenv
+import os
+
+# Cargar variables del archivo .env
+load_dotenv()  # Carga variables del archivo .env al entorno
+
+
 # Configuración: URLs y credenciales
 LOGIN_URL = "https://prodep.capacitacioncontinua.mx/login/index.php"
 DATA_URL = "https://prodep.capacitacioncontinua.mx/local/kopere_dashboard/view.php?classname=reports&method=load_report&type=course&report=3&courseid=12"
-USERNAME = "manager"       # <-- Reemplazar con el nombre de usuario correcto
-PASSWORD = "m4N4G3R*"    # <-- Reemplazar con la contraseña correcta
+
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
 
 # Google Sheets config
 
 # Archivo JSON de la cuenta de servicio
 SERVICE_ACCOUNT_FILE = 'credentials.json'
-# Puede ser el nombre del documento de Google Sheets
-SPREADSHEET_NAME = 'Prueba Data Parsing'
-SHEET_NAME = 'Hoja 1'  # Nombre de la pestaña/hoja dentro del documento
+
+SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME")
+WORKSHEET_NAME = os.getenv("WORKSHEET_NAME")
 
 
 # Clases de encabezados que queremos extraer (y el orden deseado de columnas)
@@ -140,10 +148,10 @@ try:
     except Exception as e:
         raise Exception(f"No se pudo abrir la hoja de cálculo: {e}")
     try:
-        worksheet = spreadsheet.worksheet(SHEET_NAME)
+        worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
     except Exception as e:
         raise Exception(
-            f"No se encontró la pestaña '{SHEET_NAME}' en la hoja de cálculo: {e}")
+            f"No se encontró la pestaña '{WORKSHEET_NAME}' en la hoja de cálculo: {e}")
 
     # 5. Reemplazar completamente los datos existentes en la hoja con los nuevos datos
     worksheet.clear()  # Limpia todo el contenido actual de la hoja
