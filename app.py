@@ -124,18 +124,30 @@ try:
     if not data_rows:
         raise Exception("La tabla está vacía o no se pudieron extraer filas de datos.")
     
-
-
+    # 4. Conectar a Google Sheets usando la cuenta de servicio
+    scope = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
+    creds = Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=scope)
+    client = gspread.authorize(creds)
+    # Abrir la hoja de cálculo (por nombre del documento y luego nombre de hoja)
+    try:
+        spreadsheet = client.open(SPREADSHEET_NAME)
+    except Exception as e:
+        raise Exception(f"No se pudo abrir la hoja de cálculo: {e}")
+    try:
+        worksheet = spreadsheet.worksheet(SHEET_NAME)
+    except Exception as e:
+        raise Exception(f"No se encontró la pestaña '{SHEET_NAME}' en la hoja de cálculo: {e}")
+    
 
 # ---------------------------------------
 
 # Google Sheets authorization
-scope = [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive'
-]
-creds = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=scope)
+
+
 client = gspread.authorize(creds)
 sheet = client.open(SPREADSHEET_NAME).worksheet(SHEET_NAME)
 
