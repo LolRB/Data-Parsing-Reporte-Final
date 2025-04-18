@@ -96,6 +96,35 @@ try:
         # Obtener el texto del encabezado en ese índice
         header_text = header_cells[idx].get_text(strip=True)
         header_values.append(header_text)
+        
+    # Recorrer las filas del cuerpo de la tabla y extraer columnas deseadas
+    data_rows = []
+    tbody = table.find("tbody")
+    if not tbody:
+        # Si no hay <tbody>, tomar todas las filas después del encabezado
+        table_rows = table.find_all("tr")[1:]
+    else:
+        table_rows = tbody.find_all("tr")
+    for row in table_rows:
+        cells = row.find_all(["td", "th"])  # algunas tablas podrían usar <th> para celdas de cuerpo
+        if not cells:
+            continue  # saltar si la fila está vacía o no tiene celdas
+        # Extraer valores en el orden de TARGET_HEADER_CLASSES
+        row_data = []
+        for cls in TARGET_HEADER_CLASSES:
+            idx = col_index.get(cls)
+            if idx is not None and idx < len(cells):
+                cell_text = cells[idx].get_text(strip=True)
+            else:
+                cell_text = ""
+            row_data.append(cell_text)
+        data_rows.append(row_data)
+    
+    # Verificar que se obtuvieron filas de datos
+    if not data_rows:
+        raise Exception("La tabla está vacía o no se pudieron extraer filas de datos.")
+    
+
 
 
 # ---------------------------------------
