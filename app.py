@@ -1,196 +1,177 @@
-"""This script scrapes quotes from a website and saves them to Google Sheets."""
+"""Este script obtiene calificaciones de Moodle y las exporta a Google Sheets."""
 
+import re
+from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
 
-import urllib3
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# Configuración: URLs y credenciales
-LOGIN_URL = "https://prodep.capacitacioncontinua.mx/login/index.php"
-DATA_URL = "https://prodep.capacitacioncontinua.mx/local/kopere_dashboard/view-ajax.php?classname=reports&method=getdata&report=3&courseid=12"
-
-USERNAME = "manager"
-PASSWORD = "m4N4G3R*"
-
-# Google Sheets config
-SERVICE_ACCOUNT_FILE = 'credentials.json'
-SPREADSHEET_NAME = 'Prueba Data Parsing'
-WORKSHEET_NAME = 'Hoja 1'
+# Configuración – estos valores deberían estar definidos apropiadamente
+USERNAME = "manager"        # <- reemplazar por el usuario de Moodle
+PASSWORD = "m4N4G3R*"    # <- reemplazar por la contraseña de Moodle
+COURSE_ID = 12
+SPREADSHEET_NAME = "Prueba Data Parsing"
+WORKSHEET_NAME = "Hoja 1"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
-try:
-    # 1. Iniciar sesión en el sitio web
-    session = requests.Session()
-    resp_login_page = session.get(LOGIN_URL, headers=HEADERS, verify=False)
-    resp_login_page.raise_for_status()
+session = requests.Session()
 
-    # Obtener token del formulario
-    soup_login = BeautifulSoup(resp_login_page.text, "html.parser")
-    token_input = soup_login.find("input", {"name": "logintoken"})
-    login_token = token_input["value"] if token_input else ""
-    print("DEBUG token:", login_token)
+# 1. Obtener la página de login para extraer el logintoken
+LOGIN_URL = "https://prodep.capacitacioncontinua.mx/login/index.php"
+res = session.get(LOGIN_URL, headers=HEADERS, verify=False)
+res.raise_for_status()
+match = re.search(r'name="logintoken" value="(\w+)"', res.text)
+if not match:
+    raise ValueError("No se encontró logintoken en la página de login")
+logintoken = match.group(1)
 
-    # Preparar y enviar login
-    login_data = {
-        "username": USERNAME,
-        "password": PASSWORD,
-        "anchor": "",
-    }
-    if login_token:
-        login_data["logintoken"] = login_token
+# 2. Enviar formulario de login
+login_data = {
+    "username": USERNAME,
+    "password": PASSWORD,
+    "anchor": "",
+    "logintoken": logintoken
+}
+res = session.post(LOGIN_URL, data=login_data,
+                   allow_redirects=False, headers=HEADERS, verify=False)
+res.raise_for_status()
 
-    resp_login = session.post(
-        LOGIN_URL, data=login_data, headers=HEADERS, verify=False)
+if 300 <= res.status_code < 400:
+    next_url = res.headers.get("Location")
+    if next_url:
+        res = session.get(next_url, headers=HEADERS, verify=False)
+        res.raise_for_status()
 
-    if "username" in resp_login.text.lower() and "password" in resp_login.text.lower():
-        raise ValueError(
-            "Inicio de sesión FALLIDO: Verifique el usuario y la contraseña.")
-    print("✅ Sesión iniciada correctamente.")
+dashboard_html = res.text
+sesskey_match = re.search(
+    r'sesskey["\']*:?\s*["\']([a-zA-Z0-9]+)', dashboard_html)
+if not sesskey_match:
+    raise ValueError("No se encontró sesskey tras login.")
+sesskey = sesskey_match.group(1)
 
-    # 2. Preparar payload de la solicitud POST al endpoint JSON
-    payload = {
-        "draw": 1,
-        "start": 0,
-        "length": 1000
-    }
+# 3. Obtener usuarios del curso
+ajax_url_base = "https://prodep.capacitacioncontinua.mx/lib/ajax/service.php"
+payload_users = [{
+    "index": 0,
+    "methodname": "gradereport_grader_get_users_in_report",
+    "args": {"courseid": COURSE_ID}
+}]
+url_users = f"{ajax_url_base}?sesskey={sesskey}&info=gradereport_grader_get_users_in_report"
+resp1 = session.post(url_users, json=payload_users,
+                     headers=HEADERS, verify=False)
+resp1.raise_for_status()
+users_result = resp1.json()
 
-    for i, campo in enumerate([
-        "userid", "userfullname", "email", "timecreated",
-        "activities_completed", "activities_assigned", "course_completed"
-    ]):
-        payload[f"columns[{i}][data]"] = campo
-        payload[f"columns[{i}][name]"] = ""
-        payload[f"columns[{i}][searchable]"] = "true"
-        payload[f"columns[{i}][orderable]"] = "false"
-        payload[f"columns[{i}][search][value]"] = ""
-        payload[f"columns[{i}][search][regex]"] = "false"
+user_list = []
+user_info = {}
+if users_result and isinstance(users_result, list):
+    data_part = users_result[0].get("data", {})
+    users = data_part.get("users", data_part)
+    for u in users:
+        uid = u.get("id")
+        fullname = u.get("fullname")
+        email = u.get("email")
+        if uid is not None:
+            user_list.append(uid)
+            user_info[uid] = {"name": fullname, "email": email}
 
-    resp_data = session.post(DATA_URL, headers=HEADERS,
-                             data=payload, verify=False)
-    resp_data.raise_for_status()
+# 4. Obtener calificaciones por usuario
+# CAMBIO: Extraer calificaciones directamente del HTML de la tabla de calificaciones
+grades_url = f"https://prodep.capacitacioncontinua.mx/grade/report/grader/index.php?id={COURSE_ID}"
+res_grades_html = session.get(grades_url, headers=HEADERS, verify=False)
+res_grades_html.raise_for_status()
 
-    # # 3. Extraer los datos de la tabla en la página protegida
-    # soup_data = BeautifulSoup(resp_data.text, "html.parser")
-    # table = soup_data.find("table")
-    # if table is None:
-    #     raise Exception(
-    #         "No se encontró la tabla de datos en la página protegida.")
-    # print("DEBUG tabla HTML:\n", table.prettify()[:1000])  # Muestra los primeros 1000 caracteres
+soup_grades = BeautifulSoup(res_grades_html.text, "html.parser")
 
-    # # Identificar las columnas de interés por clase en el encabezado
-    # header_cells = table.find_all("th")
-    # if not header_cells:
-    #     raise Exception(
-    #         "La tabla no tiene encabezados <th>, estructura inesperada.")
-    # # Crear un diccionario para mapear la clase de encabezado a su índice de columna
-    # col_index = {}
-    # for idx, th in enumerate(header_cells):
-    #     if not th.get("class"):
-    #         continue
-    #     # Una celda th puede tener múltiples clases, verificamos cada una
-    #     for cls in th.get("class"):
-    #         if cls in TARGET_HEADER_CLASSES:
-    #             col_index[cls] = idx
-    # # Verificar que se encontraron todas las columnas necesarias
-    # for cls in TARGET_HEADER_CLASSES:
-    #     if cls not in col_index:
-    #         raise Exception(f"No se encontró la columna esperada: {cls}")
+# CAMBIO: Acotar búsqueda a la tabla específica de calificaciones
+grades_table = soup_grades.find("table", {"id": "user-grades"})
+if not grades_table:
+    raise ValueError(
+        "No se encontró la tabla de calificaciones con id='user-grades'.")
 
-    # # Extraer encabezados de la tabla (texto)
-    # header_values = []
-    # for cls in TARGET_HEADER_CLASSES:
-    #     idx = col_index[cls]
-    #     # Obtener el texto del encabezado en ese índice
-    #     header_text = header_cells[idx].get_text(strip=True)
-    #     header_values.append(header_text)
+# Definir los items que deseamos extraer
+target_item_ids = {74: "Entregable 3",
+                   110: "Entregable 2", 236: "Entregable 1"}
 
-    # # Recorrer las filas del cuerpo de la tabla y extraer columnas deseadas
-    # data_rows = []
-    # tbody = table.find("tbody")
-    # if not tbody:
-    #     # Si no hay <tbody>, tomar todas las filas después del encabezado
-    #     table_rows = table.find_all("tr")[1:]
-    # else:
-    #     table_rows = tbody.find_all("tr")
-    # for row in table_rows:
-    #     # algunas tablas podrían usar <th> para celdas de cuerpo
-    #     cells = row.find_all(["td", "th"])
-    #     if not cells:
-    #         continue  # saltar si la fila está vacía o no tiene celdas
-    #     # Extraer valores en el orden de TARGET_HEADER_CLASSES
-    #     row_data = []
-    #     for cls in TARGET_HEADER_CLASSES:
-    #         idx = col_index.get(cls)
-    #         if idx is not None and idx < len(cells):
-    #             cell_text = cells[idx].get_text(strip=True)
-    #         else:
-    #             cell_text = ""
-    #         row_data.append(cell_text)
-    #     data_rows.append(row_data)
+grades_by_user = {}  # Inicializar estructura por usuario
 
-    # # Verificar que se obtuvieron filas de datos
-    # if not data_rows:
-    #     raise Exception(
-    #         "La tabla está vacía o no se pudieron extraer filas de datos.")
+# CAMBIO: Mapear por itemid y buscar en el HTML por ID u[USERID]i[ITEMID]
+for uid in user_list:
+    grades_by_user[uid] = {}
+    for item_id, nombre_item in target_item_ids.items():
+        celda_id = f"u{uid}i{item_id}"
+        # CAMBIO: depuración opcional
+        print(f"🔍 Buscando celda con id: {celda_id}")
+        celda = grades_table.find("td", {"id": celda_id})
+        valor = ""
+        if celda:
+            span = celda.find("span", class_="gradevalue")
+            if span:
+                valor = span.get_text(strip=True)
+        grades_by_user[uid][item_id] = valor
 
-    # 3. Extraer datos del JSON
-    try:
-        json_data = resp_data.json()
-        print("DEBUG JSON keys:", json_data.keys())
-        print("DEBUG JSON preview:", str(json_data)[:500])
-    except Exception as exc:
-        raise ValueError(
-            "No se pudo interpretar la respuesta como JSON. Verifica si la sesión sigue activa.") from exc
-
-    registros = json_data.get("data", [])
-
-    if not registros:
-        raise ValueError("No se encontraron datos en el JSON.")
-
-    # Campos a extraer
-    campos = ["userid", "userfullname", "email", "timecreated",
-              "activities_completed", "activities_assigned", "course_completed"]
-
-    header_values = campos
-    data_rows = []
-
-    for reg in registros:
-        fila = [reg.get(campo, "") for campo in campos]
-        data_rows.append(fila)
-
-    # 4. Conectar con Google Sheets
-    scope = [
-        'https://www.googleapis.com/auth/spreadsheets',
-        'https://www.googleapis.com/auth/drive'
+# 5. Preparar datos para Google Sheets
+headers = ["Nombre completo", "Email",
+           "Entregable 1", "Entregable 2", "Entregable 3"]
+table_data = [headers]
+for uid in user_list:
+    info = user_info.get(uid)
+    if not info:
+        continue
+    row = [
+        info.get("name", ""),
+        info.get("email", ""),
+        grades_by_user.get(uid, {}).get(236, ""),
+        grades_by_user.get(uid, {}).get(110, ""),
+        grades_by_user.get(uid, {}).get(74, "")
     ]
-    creds = Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=scope)
+    table_data.append(row)
+
+# 6. Enviar a Google Sheets
+creds = Credentials.from_service_account_file("credentials.json", scopes=[
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+])
+
+try:
     client = gspread.authorize(creds)
+    sheet = client.open(SPREADSHEET_NAME).worksheet(WORKSHEET_NAME)
 
-    try:
-        spreadsheet = client.open(SPREADSHEET_NAME)
-    except Exception as exc:
+    # Verificar que hay datos para subir (mínimo encabezados + 1 fila)
+    if len(table_data) <= 1:
         raise ValueError(
-            f"No se pudo abrir la hoja de cálculo: {exc}") from exc
+            "No se generaron filas válidas para actualizar la hoja de cálculo.")
 
+    # Limpiar contenido anterior
+    sheet.clear()
+
+    # print("DEBUG: Tabla a subir a Sheets:")
+    # for fila in table_data:
+    #     print(fila)
+    # sheet.update(range_name="A1", values=table_data)
+
+    # 🕒 Agregar timestamp en la celda A1
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sheet.update("A1", [[f"Actualizado el: {timestamp}"]])
+
+    # 📊 Preparar los datos para iniciar en la celda B1
+    sheet.update("B1", table_data)
+
+    # Registrar timestamp en hoja de historial
     try:
-        worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
-    except Exception as exc:
-        raise ValueError(
-            f"No se encontró la pestaña '{WORKSHEET_NAME}' en la hoja de cálculo: {exc}") from exc
+        log_sheet = client.open(SPREADSHEET_NAME).worksheet("Historial")
+    except gspread.exceptions.WorksheetNotFound:
+        log_sheet = client.open(SPREADSHEET_NAME).add_worksheet(
+            title="Historial", rows="100", cols="2")
 
-    # 5. Actualizar hoja
-    worksheet.clear()
-    all_data = [header_values] + data_rows
-    worksheet.update("A1", all_data)
+    log_sheet.append_row(
+        ["Ejecución registrada el:", timestamp])  # Cada fila nueva
 
     print("✅ Datos actualizados correctamente en la hoja de Google Sheets.")
 
-except ValueError as err:
-    print(f"ERROR: {err}")
+except ValueError as e:
+    print(f"❌ Error al actualizar Google Sheets: {e}")
