@@ -87,14 +87,42 @@ python app.py
 ```
 Al finalizar, en la celda A1 aparecerá el sello de tiempo de la última actualización y en B1 comenzará la tabla con los datos.
 
-##  Registro de Historial
+Cada ejecución:
 
-Cada ejecución anexa una fila en la pestaña Historial de la hoja de cálculo con la fecha y hora de ejecución.
+- Vacía el contenido anterior de la hoja.
 
-## Contribuciones
+- Crea una tabla con nombre completo, correo electrónico y calificaciones.
 
-Las contribuciones son bienvenidas. Por favor, abre un issue o envía un pull request con tus mejoras.
+- Registra un timestamp en otra hoja llamada Historial.
+
+## 🕒 Automatización (opcional)
+
+Puedes usar:
+
+- 🪟 Windows: Programador de tareas ejecutando un archivo .bat.
+
+- 🐧 Linux/macOS: Cron job ejecutando un .sh.
+
+## 🛠 Tecnologías utilizadas
+
+- Python
+
+- Requests
+
+- BeautifulSoup
+
+- gspread
+
+- Google API Python Client
+
+## 📌 Notas
+
+- Este script fue probado en plataformas Moodle personalizadas, por lo que podrían requerirse ajustes si cambia la estructura HTML.
+
+- El verify=False está activo para ignorar advertencias de certificados SSL. Se recomienda desactivarlo si cuentas con certificados válidos.
 
 ## 🧑‍💻 Author
 
-Creado por [Rodrigo Bueno](https://github.com/LolRB).
+Para dudas o sugerencias, contáctame por email: [ztmsiul79@gmail.com](mailto:ztmsiul79@gmail.com).
+
+Creado por Rodrigo Bueno.
