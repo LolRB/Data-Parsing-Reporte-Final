@@ -1,37 +1,40 @@
-# 📝 Data Parsing to Google Sheets
+# 📊 Automatización de Exportación de Calificaciones a Google Sheets
 
-Script de Python para iniciar sesión en PRODEP, extraer datos y actualizar Google Sheets
+Este proyecto permite automatizar la extracción de calificaciones de un curso en Moodle y exportarlas a una hoja de cálculo en Google Sheets. Está diseñado específicamente para plataformas Moodle como `https://prodep.capacitacioncontinua.mx`.
 
------
+## 🚀 Características
 
-It uses:
+- Inicia sesión de forma automática en la plataforma Moodle de Prodep.
+- Recupera nombres, correos electrónicos y calificaciones de entregables específicos.
+- Formatea los datos en una tabla con nombre completo, correo electrónico y calificaciones.
+- Limpia y actualiza los datos en la hoja de Google Sheets definida.
+- Registra un timestamp en cada ejecución (en una hoja separada).
+- Permite programar su ejecución periódica (por ejemplo, con el Programador de tareas o cron).
 
-- `requests` and `BeautifulSoup` for web scraping
-- `gspread` and `google-auth` for interacting with Google Sheets
-- A virtual environment to manage dependencies
+## 📂 Estructura del proyecto
 
----
+```
+├── app.py              # Script principal 
+├── credentials.json    # Clave de servicio de Google 
+├── README.md           # Documentación del proyecto
+```
 
-## 🚀 Features
+## 🔧 Requisitos
 
-- Scrapes quote text, author, and tags from the main page
-- Sends data to a pre-configured Google Sheet
-- Clears and replaces existing data
-- Includes error handling and request timeouts
-- Ready for future features like pagination, scheduling, and login-protected scraping
+- Python 3.8 o superior
+- Cuenta de servicio de Google Cloud y archivo credentials.json con permisos de Sheets y Drive
+- Acceso al curso en Moodle con credenciales válidas
 
----
-
-## 🔧 Setup Instructions
+## 🔧 Instalación
 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/LolRB/Data-Parsing.git
-cd Data-Parsing
+git clone https://github.com/LolRB/Data-Parsing-to-Google-Sheets.git
+cd Data-Parsing-to-Google-Sheets
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Crea y activa un entorno virtual (opcional pero recomendado):
 
 ```bash
 python -m venv venv
@@ -40,83 +43,58 @@ venv\Scripts\activate  # Windows
 source venv/bin/activate  # macOS/Linux
 ```
 
-### 3. Install dependencies
+### 3. Instala las dependencias:
 
 ```bash
 pip install requests beautifulsoup4 gspread google-auth
 ```
 
-If you don’t have a requirements.txt yet, install manually:
-```bash
-pip install -r requirements.txt
-```
-
 ## 📄 Google Sheets API Setup
 
-1. Go to Google Cloud Console
+1. Ve a Google Cloud Console
 
-2. Create a new project and enable:
+2. Crea un nuevo proyecto y habilita:
 
     - Google Sheets API
 
     - Google Drive API
 
-3. Create a Service Account, generate a JSON key, and download it.
+3. Cree una cuenta de servicio, genere una clave JSON y descárguela.
 
-4. Save the file as credentials.json in the project root.
+4. Guarde el archivo como credentials.json en la raíz del proyecto.
 
-5. Share your target Google Sheet with the service account email (found in the JSON file).
+5. Comparta su hoja de cálculo de Google de destino con el correo electrónico de la cuenta de servicio (que se encuentra en el archivo JSON).
 
-## ✏️ Configuration
+## ✏️ Configuración
 
-In scrape_to_sheets.py:
+En app.py, define las siguientes variables al inicio del archivo:
 
 ```python
-SPREADSHEET_NAME = 'Your Google Sheet Name'
-SHEET_NAME = 'Your Sheet Name'
+USERNAME = "manager"        # Usuario de Moodle
+PASSWORD = "m4N4G3R*"       # Contraseña de Moodle
+COURSE_ID = 12               # ID del curso en Moodle
+SPREADSHEET_NAME = "Prueba Data Parsing"  # Nombre de la hoja de cálculo en Google Sheets
+WORKSHEET_NAME = "Hoja 1"               # Nombre de la pestaña dentro de la hoja
 ```
-Make sure these names match your actual spreadsheet and tab.
+Asegúrese de que estos nombres coincidan con su hoja de cálculo y pestaña reales.
 
-## ▶️ Running the Script
+## ▶️ Ejecuta el Script
 
-From your activated environment:
+Ejecuta el siguiente comando para obtener y subir las calificaciones:
 
 ```bash
-python scrape_to_sheets.py
+python app.py
 ```
-If successful, the quotes will appear in your Google Sheet with columns:
+Al finalizar, en la celda A1 aparecerá el sello de tiempo de la última actualización y en B1 comenzará la tabla con los datos.
 
-- Quote
+##  Registro de Historial
 
-- Author
+Cada ejecución anexa una fila en la pestaña Historial de la hoja de cálculo con la fecha y hora de ejecución.
 
-- Tags
+## Contribuciones
 
-## 🛡️ Error Handling
-
-- Includes a timeout to prevent hanging requests
-
-- Logs network and request errors
-
-- Gracefully handles missing spreadsheet/tab names
-
-## 📌 To Do / Roadmap
- - ✅ Basic scraping from open website
-
- - ✅ Writing to Google Sheets
-
- - ✅ Virtual environment + config
-
- - 🟩 Pagination support
-
- - 🟩 Scheduled auto-execution (e.g., every 12h)
-
- - 🟩 Login-protected scraping
-
- - 🟩 Data formatting & visual enhancements in Sheets
+Las contribuciones son bienvenidas. Por favor, abre un issue o envía un pull request con tus mejoras.
 
 ## 🧑‍💻 Author
 
-Created by Rodrigo Bueno
-
-Feel free to fork, extend, or contribute!
+Creado por [Rodrigo Bueno](https://github.com/LolRB).

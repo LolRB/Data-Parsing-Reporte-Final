@@ -149,11 +149,6 @@ try:
     # Limpiar contenido anterior
     sheet.clear()
 
-    # print("DEBUG: Tabla a subir a Sheets:")
-    # for fila in table_data:
-    #     print(fila)
-    # sheet.update(range_name="A1", values=table_data)
-
     # 🕒 Agregar timestamp en la celda A1
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sheet.update("A1", [[f"Actualizado el: {timestamp}"]])
