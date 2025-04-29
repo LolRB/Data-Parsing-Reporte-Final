@@ -2,17 +2,29 @@
 
 import re
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
 import gspread
 from google.oauth2.service_account import Credentials
 
-# Configuración – estos valores deberían estar definidos apropiadamente
-USERNAME = "manager"        # <- reemplazar por el usuario de Moodle
-PASSWORD = "m4N4G3R*"    # <- reemplazar por la contraseña de Moodle
-COURSE_ID = 12
-SPREADSHEET_NAME = "Prueba Data Parsing"
-WORKSHEET_NAME = "Hoja 1"
+# Cargar variables de entorno del archivo .env
+load_dotenv()
+
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+COURSE_ID = int(os.getenv("COURSE_ID"))  # porque es número
+
+# ✅ Validar que el COURSE_ID sea correcto
+if COURSE_ID <= 0:
+    raise ValueError(
+        "COURSE_ID del archivo .env es inválido. Debe ser un número positivo mayor a 0.")
+
+SPREADSHEET_NAME = os.getenv("SPREADSHEET_NAME")
+WORKSHEET_NAME = os.getenv("WORKSHEET_NAME")
+
+print(f"DEBUG USERNAME: {USERNAME}, COURSE_ID: {COURSE_ID}")
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0"
@@ -40,11 +52,10 @@ res = session.post(LOGIN_URL, data=login_data,
                    allow_redirects=False, headers=HEADERS, verify=False)
 res.raise_for_status()
 
-if 300 <= res.status_code < 400:
-    next_url = res.headers.get("Location")
-    if next_url:
-        res = session.get(next_url, headers=HEADERS, verify=False)
-        res.raise_for_status()
+# Después del login, forzar visita a la página principal para estabilizar la sesión
+dashboard_url = "https://prodep.capacitacioncontinua.mx/my/"
+res = session.get(dashboard_url, headers=HEADERS, verify=False)
+res.raise_for_status()
 
 dashboard_html = res.text
 sesskey_match = re.search(
@@ -80,10 +91,24 @@ if users_result and isinstance(users_result, list):
             user_info[uid] = {"name": fullname, "email": email}
 
 # 4. Obtener calificaciones por usuario
+
+# Navegar primero al curso
+course_url = f"https://prodep.capacitacioncontinua.mx/course/view.php?id={COURSE_ID}"
+res_course = session.get(course_url, headers=HEADERS, verify=False)
+res_course.raise_for_status()
+
 # CAMBIO: Extraer calificaciones directamente del HTML de la tabla de calificaciones
 grades_url = f"https://prodep.capacitacioncontinua.mx/grade/report/grader/index.php?id={COURSE_ID}"
 res_grades_html = session.get(grades_url, headers=HEADERS, verify=False)
 res_grades_html.raise_for_status()
+
+# Verificar si el contenido redirigió al login
+if "login" in res_grades_html.url or "Ingresar al sitio" in res_grades_html.text:
+    raise ValueError(
+        "La sesión no se mantuvo al acceder a la página de calificaciones. Verifica que el login sea válido y persistente.")
+
+print("DEBUG: Mostrando HTML de grades_url (parcial):")
+print(res_grades_html.text[:2000])  # solo los primeros 2000 caracteres
 
 soup_grades = BeautifulSoup(res_grades_html.text, "html.parser")
 
@@ -132,10 +157,20 @@ for uid in user_list:
     table_data.append(row)
 
 # 6. Enviar a Google Sheets
-creds = Credentials.from_service_account_file("credentials.json", scopes=[
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-])
+credentials_file = os.getenv("GOOGLE_CREDENTIALS_FILE")
+
+if not credentials_file:
+    raise ValueError(
+        "No se encontró la ruta de las credenciales en el archivo .env")
+
+creds = Credentials.from_service_account_file(
+    credentials_file,
+    scopes=[
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive"
+    ]
+)
+
 
 try:
     client = gspread.authorize(creds)
