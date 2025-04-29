@@ -15,9 +15,43 @@ Este proyecto permite automatizar la extracción de calificaciones de un curso e
 
 ```
 ├── app.py              # Script principal 
-├── credentials.json    # Clave de servicio de Google 
+├── .env                # Variables de entorno sensibles (NO subir al repositorio)
+├── .env.example        # Archivo de ejemplo para configurar las variables de entorno
+├── credentials.json    # Clave de servicio de Google (añadir al .gitignore)
 ├── README.md           # Documentación del proyecto
 ```
+
+## 🛡️ Recomendaciones de seguridad
+
+Para proteger tus credenciales y entorno de desarrollo:
+
+- Nunca subas tu archivo .env ni credentials.json al repositorio.
+
+- Usa un archivo .env.example para compartir la estructura de las variables necesarias sin exponer datos sensibles.
+
+- Asegúrate de incluir los siguientes archivos en tu archivo .gitignore:
+
+```
+# Google credentials
+credentials.json
+
+# Python venv
+venv/
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Variables de entorno
+.env
+```
+
+Esto evitará que información confidencial sea accidentalmente publicada o compartida.
 
 ## 🔧 Requisitos
 
@@ -78,18 +112,31 @@ pip install requests beautifulsoup4 gspread google-auth
 
 5. Comparta su hoja de cálculo de Google de destino con el correo electrónico de la cuenta de servicio (que se encuentra en el archivo JSON).
 
-## ✏️ Configuración
+## ✏️ Configuración del archivo .env
 
-En app.py, define las siguientes variables al inicio del archivo:
+Este proyecto utiliza variables de entorno para manejar credenciales y parámetros de forma segura. Antes de ejecutar el script, crea un archivo ```.env``` en la raíz del proyecto siguiendo el formato de ```.env.example```.
 
-```python
-USERNAME = "usuario"        # Usuario de Moodle
-PASSWORD = "password"       # Contraseña de Moodle
-COURSE_ID = 33               # ID del curso en Moodle
-SPREADSHEET_NAME = "Prueba"  # Nombre de la hoja de cálculo en Google Sheets
-WORKSHEET_NAME = "Hoja 1"               # Nombre de la pestaña dentro de la hoja
+### 1. Copia el archivo de ejemplo:
+```bash
+cp .env.example .env
 ```
-Asegúrese de que estos nombres coincidan con su hoja de cálculo y pestaña reales.
+
+### 2. Edita el archivo ```.env``` y reemplaza los valores con tus datos:
+- USERNAME y PASSWORD: credenciales del usuario en Moodle.
+
+- COURSE_ID: ID del curso del cual deseas obtener las calificaciones.
+
+- SPREADSHEET_NAME: nombre de tu hoja de cálculo de Google.
+
+- WORKSHEET_NAME: nombre de la pestaña donde se escribirán los datos.
+
+- GOOGLE_CREDENTIALS_FILE: nombre del archivo JSON con las credenciales del servicio de Google (debe estar en la raíz o indicar su ruta).
+
+⚠️ Importante: No subas el archivo ```.env``` a ningún repositorio público. Añádelo a tu .gitignore así:
+
+```gitignore
+.env
+```
 
 ## ▶️ Ejecuta el Script
 
@@ -112,9 +159,9 @@ Cada ejecución:
 
 Puedes usar:
 
-- 🪟 Windows: Programador de tareas ejecutando un archivo .bat.
+- 🪟 Windows: Programador de tareas ejecutando un archivo ```.bat```.
 
-- 🐧 Linux/macOS: Cron job ejecutando un .sh.
+- 🐧 Linux/macOS: Cron job ejecutando un ```.sh```.
 
 ## 🛠 Tecnologías utilizadas
 
@@ -132,7 +179,7 @@ Puedes usar:
 
 - Este script fue probado en plataformas Moodle personalizadas, por lo que podrían requerirse ajustes si cambia la estructura HTML.
 
-- El verify=False está activo para ignorar advertencias de certificados SSL. Se recomienda desactivarlo si cuentas con certificados válidos.
+- El ```verify=False``` está activo para ignorar advertencias de certificados SSL. Se recomienda desactivarlo si cuentas con certificados válidos.
 
 ## 🧑‍💻 Author
 
