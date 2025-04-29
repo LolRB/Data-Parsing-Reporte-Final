@@ -27,12 +27,25 @@ Este proyecto permite automatizar la extracción de calificaciones de un curso e
 
 ## 🔧 Instalación
 
-### 1. Clone the repository
+### 1. Clona el repositorio privado
+
+Para clonar este repositorio, asegúrate de tener acceso autorizado en GitHub.
+
+- SSH (recomendado) si tienes configurada tu clave SSH:
 
 ```bash
-git clone https://github.com/LolRB/Data-Parsing-to-Google-Sheets.git
-cd Data-Parsing-to-Google-Sheets
+git clone git@github.com:LolRB/Data-Parsing-Reporte-Final.git
+cd Data-Parsing-Reporte-Final
 ```
+
+- HTTPS (te pedirá usuario y contraseña o token personal):
+
+```bash
+git clone https://github.com/LolRB/Data-Parsing-Reporte-Final.git
+cd Data-Parsing-Reporte-Final
+```
+
+🔒 Nota: Si usas HTTPS, GitHub puede solicitar un token de acceso personal en lugar de tu contraseña.
 
 ### 2. Crea y activa un entorno virtual (opcional pero recomendado):
 
