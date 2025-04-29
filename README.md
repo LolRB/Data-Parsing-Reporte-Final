@@ -83,10 +83,10 @@ pip install requests beautifulsoup4 gspread google-auth
 En app.py, define las siguientes variables al inicio del archivo:
 
 ```python
-USERNAME = "manager"        # Usuario de Moodle
-PASSWORD = "m4N4G3R*"       # Contraseña de Moodle
-COURSE_ID = 12               # ID del curso en Moodle
-SPREADSHEET_NAME = "Prueba Data Parsing"  # Nombre de la hoja de cálculo en Google Sheets
+USERNAME = "usuario"        # Usuario de Moodle
+PASSWORD = "password"       # Contraseña de Moodle
+COURSE_ID = 33               # ID del curso en Moodle
+SPREADSHEET_NAME = "Prueba"  # Nombre de la hoja de cálculo en Google Sheets
 WORKSHEET_NAME = "Hoja 1"               # Nombre de la pestaña dentro de la hoja
 ```
 Asegúrese de que estos nombres coincidan con su hoja de cálculo y pestaña reales.
