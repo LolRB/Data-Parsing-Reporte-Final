@@ -86,19 +86,19 @@ cd Data-Parsing-Reporte-Final
 ```bash
 python -m venv venv
 venv\Scripts\activate  # Windows
-# or
+# ó
 source venv/bin/activate  # macOS/Linux
 ```
 
 ### 3. Instala las dependencias:
 
 ```bash
-pip install requests beautifulsoup4 gspread google-auth
+pip install requests beautifulsoup4 gspread google-auth python-dotenv
 ```
 
 ## 📄 Google Sheets API Setup
 
-1. Ve a Google Cloud Console
+1. Entra a Google Cloud Console
 
 2. Crea un nuevo proyecto y habilita:
 
@@ -106,13 +106,13 @@ pip install requests beautifulsoup4 gspread google-auth
 
     - Google Drive API
 
-3. Cree una cuenta de servicio, genere una clave JSON y descárguela.
+3. Cree una cuenta de servicio, genere una clave JSON y descargue el archivo ```.json```.
 
-4. Guarde el archivo como credentials.json en la raíz del proyecto.
+4. Guarde el archivo como ```credentials.json``` en la raíz del proyecto.
 
 5. Comparta su hoja de cálculo de Google de destino con el correo electrónico de la cuenta de servicio (que se encuentra en el archivo JSON).
 
-## ✏️ Configuración del archivo .env
+## ✏️ Configuración del archivo ```.env```
 
 Este proyecto utiliza variables de entorno para manejar credenciales y parámetros de forma segura. Antes de ejecutar el script, crea un archivo ```.env``` en la raíz del proyecto siguiendo el formato de ```.env.example```.
 
@@ -132,7 +132,7 @@ cp .env.example .env
 
 - GOOGLE_CREDENTIALS_FILE: nombre del archivo JSON con las credenciales del servicio de Google (debe estar en la raíz o indicar su ruta).
 
-⚠️ Importante: No subas el archivo ```.env``` a ningún repositorio público. Añádelo a tu .gitignore así:
+⚠️ Importante: No subas el archivo ```.env``` a ningún repositorio público. Añádelo a tu ```.gitignore``` así:
 
 ```gitignore
 .env
@@ -159,21 +159,21 @@ Cada ejecución:
 
 Puedes usar:
 
-- 🪟 Windows: Programador de tareas ejecutando un archivo ```.bat```.
+- 🪟 Windows: Usa el Programador de tareas con un ```.bat```.. que ejecute el script.
 
-- 🐧 Linux/macOS: Cron job ejecutando un ```.sh```.
+- 🐧 Linux/macOS:Usa ```.cron```. para lanzar el script con un ```.sh```.
 
 ## 🛠 Tecnologías utilizadas
 
-- Python
+- Python 3.x
 
-- Requests
+- Requests (peticiones HTTP)
 
-- BeautifulSoup
+- BeautifulSoup (parseo HTML)
 
-- gspread
+- gspread + Google API (acceso a hojas de cálculo)
 
-- Google API Python Client
+- dotenv (variables de entorno)
 
 ## 📌 Notas
 
@@ -183,6 +183,8 @@ Puedes usar:
 
 ## 🧑‍💻 Author
 
-Para dudas o sugerencias, contáctame por email: [ztmsiul79@gmail.com](mailto:ztmsiul79@gmail.com).
+Para dudas o mejoras, contáctame por correo:
 
-Creado por Rodrigo Bueno.
+📧 [ztmsiul79@gmail.com](mailto:ztmsiul79@gmail.com).
+
+👨‍💻 Proyecto desarrollado por Rodrigo Bueno.
