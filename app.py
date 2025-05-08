@@ -53,8 +53,8 @@ res = session.post(LOGIN_URL, data=login_data,
 res.raise_for_status()
 
 # Después del login, forzar visita a la página principal para estabilizar la sesión
-dashboard_url = "https://prodep.capacitacioncontinua.mx/my/"
-res = session.get(dashboard_url, headers=HEADERS, verify=False)
+DASHBOARD_URL = "https://prodep.capacitacioncontinua.mx/my/"
+res = session.get(DASHBOARD_URL, headers=HEADERS, verify=False)
 res.raise_for_status()
 
 dashboard_html = res.text
@@ -65,14 +65,14 @@ if not sesskey_match:
 sesskey = sesskey_match.group(1)
 
 # 3. Obtener usuarios del curso
-ajax_url_base = "https://prodep.capacitacioncontinua.mx/lib/ajax/service.php"
+AJAX_URL_BASE = "https://prodep.capacitacioncontinua.mx/lib/ajax/service.php"
 payload_users = [{
     "index": 0,
     "methodname": "gradereport_grader_get_users_in_report",
     "args": {"courseid": COURSE_ID}
 }]
-url_users = f"{ajax_url_base}?sesskey={sesskey}&info=gradereport_grader_get_users_in_report"
-resp1 = session.post(url_users, json=payload_users,
+URL_USERS = f"{AJAX_URL_BASE}?sesskey={sesskey}&info=gradereport_grader_get_users_in_report"
+resp1 = session.post(URL_USERS, json=payload_users,
                      headers=HEADERS, verify=False)
 resp1.raise_for_status()
 users_result = resp1.json()
@@ -93,13 +93,13 @@ if users_result and isinstance(users_result, list):
 # 4. Obtener calificaciones por usuario
 
 # Navegar primero al curso
-course_url = f"https://prodep.capacitacioncontinua.mx/course/view.php?id={COURSE_ID}"
-res_course = session.get(course_url, headers=HEADERS, verify=False)
+COURSE_URL = f"https://prodep.capacitacioncontinua.mx/course/view.php?id={COURSE_ID}"
+res_course = session.get(COURSE_URL, headers=HEADERS, verify=False)
 res_course.raise_for_status()
 
 # CAMBIO: Extraer calificaciones directamente del HTML de la tabla de calificaciones
-grades_url = f"https://prodep.capacitacioncontinua.mx/grade/report/grader/index.php?id={COURSE_ID}"
-res_grades_html = session.get(grades_url, headers=HEADERS, verify=False)
+GRADES_URL = f"https://prodep.capacitacioncontinua.mx/grade/report/grader/index.php?id={COURSE_ID}"
+res_grades_html = session.get(GRADES_URL, headers=HEADERS, verify=False)
 res_grades_html.raise_for_status()
 
 # Verificar si el contenido redirigió al login
@@ -107,7 +107,7 @@ if "login" in res_grades_html.url or "Ingresar al sitio" in res_grades_html.text
     raise ValueError(
         "La sesión no se mantuvo al acceder a la página de calificaciones. Verifica que el login sea válido y persistente.")
 
-print("DEBUG: Mostrando HTML de grades_url (parcial):")
+print("DEBUG: Mostrando HTML de GRADES_URL (parcial):")
 print(res_grades_html.text[:2000])  # solo los primeros 2000 caracteres
 
 soup_grades = BeautifulSoup(res_grades_html.text, "html.parser")
@@ -128,16 +128,16 @@ grades_by_user = {}  # Inicializar estructura por usuario
 for uid in user_list:
     grades_by_user[uid] = {}
     for item_id, nombre_item in target_item_ids.items():
-        celda_id = f"u{uid}i{item_id}"
+        CELDA_ID = f"u{uid}i{item_id}"
         # CAMBIO: depuración opcional
-        print(f"🔍 Buscando celda con id: {celda_id}")
-        celda = grades_table.find("td", {"id": celda_id})
-        valor = ""
+        # print(f"🔍 Buscando celda con id: {CELDA_ID}")
+        celda = grades_table.find("td", {"id": CELDA_ID})
+        VALOR = ""
         if celda:
             span = celda.find("span", class_="gradevalue")
             if span:
-                valor = span.get_text(strip=True)
-        grades_by_user[uid][item_id] = valor
+                VALOR = span.get_text(strip=True)
+        grades_by_user[uid][item_id] = VALOR
 
 # 5. Preparar datos para Google Sheets
 headers = ["Nombre completo", "Email",
